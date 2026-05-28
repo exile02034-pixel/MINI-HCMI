@@ -8,9 +8,10 @@ interface ModalProps {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  description?: string;
 }
 
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({ open, title, onClose, children, description }: ModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <Dialog.Portal>
@@ -26,6 +27,11 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
               <X className="h-4 w-4" />
             </Dialog.Close>
           </div>
+          {description ? (
+            <Dialog.Description className="mb-4 text-sm text-slate-500">
+              {description}
+            </Dialog.Description>
+          ) : null}
           {children}
         </Dialog.Content>
       </Dialog.Portal>

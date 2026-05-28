@@ -1,5 +1,3 @@
-import { FormEvent, useState } from "react";
-import { AttendanceRecord, ApiError } from "../types";
 import { AttendanceTable } from "../components/attendance/AttendanceTable";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
@@ -7,37 +5,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Input } from "../components/ui/Input";
 import { Label } from "../components/ui/Label";
 import { Modal } from "../components/ui/Modal";
-import { useAdminPunches } from "../hooks/useAdminPunches";
-import { punchService } from "../services/api/punchService";
+import { useAdminPunchManagement } from "../hooks/useAdminPunchManagement";
 import { formatDate, toTimeInput } from "../utils/format";
 
 export function AdminPunchesPage() {
-  const punches = useAdminPunches();
-  const [selected, setSelected] = useState<AttendanceRecord | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!selected) return;
-
-    setIsSubmitting(true);
-    setError(null);
-    const formData = new FormData(event.currentTarget);
-
-    try {
-      await punchService.edit(selected.id, {
-        timeIn: String(formData.get("timeIn") || ""),
-        timeOut: String(formData.get("timeOut") || ""),
-      });
-      setSelected(null);
-      await punches.reload();
-    } catch (err) {
-      setError((err as ApiError).message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    records,
+    isLoading,
+    loadError,
+    selected,
+    setSelected,
+    error,
+    successMessage,
+    isSubmitting,
+    onSubmit,
+    closeEditModal,
+    closeSuccessModal,
+    modalTitle,
+    isModalOpen,
+  } = useAdminPunchManagement();
 
   return (
     <>
@@ -47,12 +33,13 @@ export function AdminPunchesPage() {
           <CardDescription>Review and correct employee punch records when needed.</CardDescription>
         </CardHeader>
         <CardContent>
-          {punches.error ? <Alert tone="error" message={punches.error.message} /> : null}
-          {punches.isLoading ? (
+          {loadError ? <Alert tone="error" message={loadError} /> : null}
+          {isLoading ? (
             <p className="text-sm text-slate-500">Loading punch records...</p>
           ) : (
             <AttendanceTable
-              records={punches.data || []}
+              records={records}
+              showEmployee
               actionSlot={(record) => (
                 <Button variant="ghost" size="sm" onClick={() => setSelected(record)}>
                   Edit
@@ -63,26 +50,52 @@ export function AdminPunchesPage() {
         </CardContent>
       </Card>
 
-      <Modal open={Boolean(selected)} title="Edit punch record" onClose={() => setSelected(null)}>
+      <Modal
+        open={isModalOpen}
+        title={modalTitle}
+        description={
+          selected
+            ? "Update this punch using the employee's local time so the saved value matches their shift."
+            : "The attendance record was saved and the table has been updated."
+        }
+        onClose={selected ? closeEditModal : closeSuccessModal}
+      >
         {selected ? (
           <form className="space-y-4" onSubmit={onSubmit}>
             <div className="rounded-md border bg-slate-50 p-4 text-sm text-slate-600">
               <p className="font-semibold text-slate-950">{selected.employee?.name || selected.userId}</p>
               <p className="mt-1">{formatDate(selected.date)}</p>
+              <p className="mt-1">
+                {selected.employee?.timezone || "Timezone unavailable"}
+                {selected.employee?.schedule
+                  ? ` • Shift ${selected.employee.schedule.start} - ${selected.employee.schedule.end}`
+                  : ""}
+              </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="timeIn">Time In</Label>
-                <Input id="timeIn" name="timeIn" type="time" defaultValue={toTimeInput(selected.timeIn)} required />
+                <Input
+                  id="timeIn"
+                  name="timeIn"
+                  type="time"
+                  defaultValue={toTimeInput(selected.timeIn, selected.employee?.timezone)}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timeOut">Time Out</Label>
-                <Input id="timeOut" name="timeOut" type="time" defaultValue={toTimeInput(selected.timeOut)} />
+                <Input
+                  id="timeOut"
+                  name="timeOut"
+                  type="time"
+                  defaultValue={toTimeInput(selected.timeOut, selected.employee?.timezone)}
+                />
               </div>
             </div>
             {error ? <Alert tone="error" message={error} /> : null}
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setSelected(null)}>
+              <Button type="button" variant="outline" onClick={closeEditModal}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
@@ -90,7 +103,16 @@ export function AdminPunchesPage() {
               </Button>
             </div>
           </form>
-        ) : null}
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              {successMessage || "The attendance record has been updated successfully."}
+            </p>
+            <div className="flex justify-end">
+              <Button onClick={closeSuccessModal}>Okay</Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </>
   );

@@ -1,9 +1,11 @@
 import { AttendanceTable } from "../components/attendance/AttendanceTable";
 import { Alert } from "../components/ui/Alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
+import { useAuthSession } from "../hooks/useAuthSession";
 import { useAttendanceHistory } from "../hooks/useAttendanceHistory";
 
 export function HistoryPage() {
+  const { user } = useAuthSession();
   const history = useAttendanceHistory(12);
 
   return (
@@ -17,7 +19,7 @@ export function HistoryPage() {
         {history.isLoading ? (
           <p className="text-sm text-slate-500">Loading attendance history...</p>
         ) : (
-          <AttendanceTable records={history.data || []} />
+          <AttendanceTable records={history.data || []} timeZone={user?.timezone} />
         )}
       </CardContent>
     </Card>

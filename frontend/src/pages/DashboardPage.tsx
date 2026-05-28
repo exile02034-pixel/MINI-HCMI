@@ -47,11 +47,15 @@ export function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-lg border bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Time In</p>
-                <p className="mt-2 text-base font-semibold text-slate-950">{formatDateTime(todayPunch.data.timeIn)}</p>
+                <p className="mt-2 text-base font-semibold text-slate-950">
+                  {formatDateTime(todayPunch.data.timeIn, user?.timezone)}
+                </p>
               </div>
               <div className="rounded-lg border bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Time Out</p>
-                <p className="mt-2 text-base font-semibold text-slate-950">{formatDateTime(todayPunch.data.timeOut)}</p>
+                <p className="mt-2 text-base font-semibold text-slate-950">
+                  {formatDateTime(todayPunch.data.timeOut, user?.timezone)}
+                </p>
               </div>
               <div className="rounded-lg border bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Status</p>

@@ -14,7 +14,7 @@ export const punchService = {
     }),
   getAll: () => apiRequest<AttendanceRecord[]>("/punch/all"),
   edit: (attendanceId: string, payload: { timeIn?: string; timeOut?: string }) =>
-    apiRequest<{ message: string }>("/punch/edit/" + attendanceId, {
+    apiRequest<{ message: string; attendance: AttendanceRecord }>("/punch/edit/" + attendanceId, {
       method: "PUT",
       body: payload,
     }),

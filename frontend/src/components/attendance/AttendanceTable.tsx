@@ -8,14 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 interface AttendanceTableProps {
   records: AttendanceRecord[];
   actionSlot?: (record: AttendanceRecord) => ReactNode;
+  showEmployee?: boolean;
+  timeZone?: string;
 }
 
-export function AttendanceTable({ records, actionSlot }: AttendanceTableProps) {
+export function AttendanceTable({ records, actionSlot, showEmployee = false, timeZone }: AttendanceTableProps) {
   if (!records.length) {
     return <EmptyState title="No attendance yet" message="Punch activity will appear here once employees start logging time." />;
   }
 
+  const shouldShowEmployee = showEmployee || records.some((record) => Boolean(record.employee?.name));
   const headers = [
+    ...(shouldShowEmployee ? ["Employee"] : []),
     "Date",
     "Time In",
     "Time Out",
@@ -40,9 +44,10 @@ export function AttendanceTable({ records, actionSlot }: AttendanceTableProps) {
         <TableBody>
           {records.map((record) => (
             <TableRow key={record.id}>
+              {shouldShowEmployee ? <TableCell>{record.employee?.name || record.userId}</TableCell> : null}
               <TableCell>{formatDate(record.date)}</TableCell>
-              <TableCell>{formatTimeOnly(record.timeIn)}</TableCell>
-              <TableCell>{formatTimeOnly(record.timeOut)}</TableCell>
+              <TableCell>{formatTimeOnly(record.timeIn, record.employee?.timezone || timeZone)}</TableCell>
+              <TableCell>{formatTimeOnly(record.timeOut, record.employee?.timezone || timeZone)}</TableCell>
               <TableCell><StatusBadge value={record.status} /></TableCell>
               <TableCell>{formatHours(record.computed?.regularHours)}</TableCell>
               <TableCell>{formatHours(record.computed?.overtimeHours)}</TableCell>
