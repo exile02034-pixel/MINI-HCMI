@@ -10,6 +10,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const localServiceAccountPath = path.join(__dirname, "./serviceAccountKey.json");
 
+const normalizePrivateKey = (value) => {
+  if (!value) return value;
+
+  let normalized = value.trim();
+
+  if (
+    (normalized.startsWith('"') && normalized.endsWith('"')) ||
+    (normalized.startsWith("'") && normalized.endsWith("'"))
+  ) {
+    normalized = normalized.slice(1, -1);
+  }
+
+  return normalized.replace(/\\n/g, "\n");
+};
+
 const parseServiceAccountFromEnv = () => {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     return JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
@@ -23,7 +38,7 @@ const parseServiceAccountFromEnv = () => {
     return {
       project_id: process.env.FIREBASE_PROJECT_ID,
       client_email: process.env.FIREBASE_CLIENT_EMAIL,
-      private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      private_key: normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY),
     };
   }
 
