@@ -1,73 +1,19 @@
-import { FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Alert } from "../components/ui/Alert";
+import { PasswordField } from "../components/auth/PasswordField";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Label } from "../components/ui/Label";
 import { Select } from "../components/ui/Select";
-import { useRegister } from "../hooks/useRegister";
+import { timezoneOptions } from "../constants/timezones";
+import { usePasswordToggle } from "../hooks/usePasswordToggle";
+import { useRegisterForm } from "../hooks/useRegisterForm";
 import { AuthLayout } from "../layouts/AuthLayout";
-import { ApiError } from "../types";
-
-const timezoneOptions = [
-  "Asia/Manila",
-  "Asia/Singapore",
-  "Asia/Tokyo",
-  "Australia/Sydney",
-  "UTC",
-  "Europe/London",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-];
 
 export function RegisterPage() {
-  const register = useRegister();
-  const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    setMessage(null);
-    setIsSubmitting(true);
-
-    const formData = new FormData(event.currentTarget);
-    const password = String(formData.get("password") || "");
-    const confirmPassword = String(formData.get("confirmPassword") || "");
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      await register({
-        name: String(formData.get("name") || ""),
-        email: String(formData.get("email") || ""),
-        password,
-        role: "employee",
-        timezone: String(formData.get("timezone") || "Asia/Manila"),
-        schedule: {
-          start: String(formData.get("scheduleStart") || "09:00"),
-          end: String(formData.get("scheduleEnd") || "18:00"),
-        },
-      });
-      setMessage("Registration successful. You can now log in.");
-      setTimeout(() => navigate("/login"), 900);
-    } catch (err) {
-      setError((err as ApiError).message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const { error, message, isSubmitting, onSubmit } = useRegisterForm();
+  const passwordField = usePasswordToggle();
+  const confirmPasswordField = usePasswordToggle();
 
   return (
     <AuthLayout>
@@ -86,48 +32,24 @@ export function RegisterPage() {
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" placeholder="maria@company.com" required />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Create password"
-              className="pr-10"
-              required
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
-              onClick={() => setShowPassword((current) => !current)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm password</Label>
-          <div className="relative">
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm password"
-              className="pr-10"
-              required
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
-              onClick={() => setShowConfirmPassword((current) => !current)}
-              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-            >
-              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-        </div>
+        <PasswordField
+          id="password"
+          name="password"
+          label="Password"
+          placeholder="Create password"
+          type={passwordField.inputType}
+          isVisible={passwordField.isVisible}
+          onToggle={passwordField.toggleVisibility}
+        />
+        <PasswordField
+          id="confirmPassword"
+          name="confirmPassword"
+          label="Confirm password"
+          placeholder="Confirm password"
+          type={confirmPasswordField.inputType}
+          isVisible={confirmPasswordField.isVisible}
+          onToggle={confirmPasswordField.toggleVisibility}
+        />
         <div className="grid gap-5 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Role</Label>
