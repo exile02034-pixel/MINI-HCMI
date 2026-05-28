@@ -7,6 +7,10 @@ export const dailySummaryRepository = {
     return dailySummaryCollection.doc(summaryId).set(payload, { merge: true });
   },
 
+  remove(summaryId) {
+    return dailySummaryCollection.doc(summaryId).delete();
+  },
+
   async listByDate(date) {
     const snapshot = await dailySummaryCollection.where("date", "==", date).get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
