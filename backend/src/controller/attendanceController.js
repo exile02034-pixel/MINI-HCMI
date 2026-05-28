@@ -1,67 +1,31 @@
-import { db } from "../config/firebaseConfig.js";
-import { formatAttendance } from "../utils/attendanceFormatter.js";
+import { AppError } from "../errors/AppError.js";
+import { attendanceService } from "../services/attendanceService.js";
+
 export const getUserAttendance = async (req, res) => {
   try {
-    const userId = req.userId;
-
-    const attendanceSnapshot = await db
-      .collection("attendance")
-      .where("userId", "==", userId)
-      .orderBy("createdAt", "desc")
-      .limit(5)
-      .get();
-
-    const attendanceRecords = attendanceSnapshot.docs.map((doc) =>
-      formatAttendance(doc)
+    const attendanceRecords = await attendanceService.getUserAttendance(
+      req.userId,
+      Number(req.query.limit || 10)
     );
-
     res.status(200).json(attendanceRecords);
   } catch (error) {
-    console.error("Error fetching user attendance:", error);
-
-    res.status(500).json({
-      error: "Internal server error",
+    res.status(error instanceof AppError ? error.statusCode : 500).json({
+      error: error.message || "Internal server error",
+      details: error.details || null,
     });
   }
 };
 
 export const getAllAttendance = async (req, res) => {
   try {
-    const attendanceSnapshot = await db
-      .collection("attendance")
-      .orderBy("createdAt", "desc")
-      .limit(5)
-      .get();
-
-    const attendanceRecords = await Promise.all(
-      attendanceSnapshot.docs.map(async (doc) => {
-        const formattedAttendance = formatAttendance(doc);
-
-        // Fetch user profile
-        const userDoc = await db
-          .collection("users")
-          .doc(formattedAttendance.userId)
-          .get();
-
-        const userData = userDoc.exists ? userDoc.data() : null;
-
-        return {
-          ...formattedAttendance,
-          employee: userData
-            ? {
-                name: userData.name,
-
-              }
-            : null,
-        };
-      })
+    const attendanceRecords = await attendanceService.getAllAttendance(
+      Number(req.query.limit || 50)
     );
-
     res.status(200).json(attendanceRecords);
   } catch (error) {
-    res.status(500).json({
-      error: "Internal server error",
-      details: error.message,
+    res.status(error instanceof AppError ? error.statusCode : 500).json({
+      error: error.message || "Internal server error",
+      details: error.details || error.message,
     });
   }
 };

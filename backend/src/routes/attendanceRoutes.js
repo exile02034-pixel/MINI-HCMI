@@ -5,7 +5,7 @@ import adminMiddleware from '../middleware/adminMiddleware.js'
 const attendanceRouter = express.Router()
 
 attendanceRouter.get('/all', authmiddleware, adminMiddleware, getAllAttendance)
-attendanceRouter.get('/:userId', authmiddleware, getUserAttendance)
+attendanceRouter.get('/me', authmiddleware, getUserAttendance)
 
 
 export default attendanceRouter

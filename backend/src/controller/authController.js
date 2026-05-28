@@ -1,87 +1,63 @@
-import { auth, db } from "../config/firebaseConfig.js";
-import axios from "axios";
+import { AppError } from "../errors/AppError.js";
+import { authService } from "../services/authService.js";
 
 export const registerUser = async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      password,
-      role = "employee",
-      timezone = "Asia/Manila",
-      schedule = {
-        start: "09:00",
-        end: "18:00",
-      },
-    } = req.body;
-
-    const userRecord = await auth.createUser({
-      email,
-      password,
-      displayName: name,
-    });
-
-    await db.collection("users").doc(userRecord.uid).set({
-      name,
-      email,
-      role,
-      timezone,
-      schedule,
-      createdAt: new Date(),
-    });
+    const result = await authService.registerUser(req.body);
 
     res.status(201).json({
       message: "User registered successfully",
-      uid: userRecord.uid,
+      uid: result.uid,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Failed to register user",
-      error: error.message,
+      message: error.message || "Failed to register user",
+      error: error.details || error.message,
     });
   }
 };
 
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const result = await authService.loginUser(req.body);
 
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required",
-      });
-    }
-
-    const response = await axios.post(
-      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_API_KEY}`,
-      {
-        email,
-        password,
-        returnSecureToken: true,
-      }
-    );
-
-    const data = response.data;
-
-    const userDoc = await db.collection("users").doc(data.localId).get();
-
-    res.cookie("token", data.idToken, {
+    res.cookie("token", result.token, {
       httpOnly: true,
-      secure: false, 
+      secure: false,
       sameSite: "lax",
-      maxAge: 60 * 60 * 1000, 
+      maxAge: 60 * 60 * 1000,
     });
 
     res.status(200).json({
       message: "Login successful",
-      uid: data.localId,
-      user: userDoc.data(),
+      uid: result.uid,
+      user: result.user,
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Login failed",
-      error: error.response?.data?.error?.message || error.message,
+    res.status(error instanceof AppError ? error.statusCode : 500).json({
+      message: error.message || "Login failed",
+      error: error.details || error.message,
     });
   }
+};
+
+export const getCurrentUser = async (req, res) => {
+  try {
+    const session = await authService.getCurrentUser(req.userId);
+    res.status(200).json(session);
+  } catch (error) {
+    res.status(error instanceof AppError ? error.statusCode : 500).json({
+      message: error.message || "Failed to load session",
+      error: error.details || error.message,
+    });
+  }
+};
+
+export const logoutUser = async (_req, res) => {
+  res.clearCookie("token", authService.logoutConfig());
+
+  res.status(200).json({
+    message: "Logout successful",
+  });
 };
  

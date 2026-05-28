@@ -3,7 +3,7 @@ import {punchIn, punchOut, getPunchRecord, getAllPunchRecords, editPunchRecord} 
 import authmiddleware from '../middleware/authMiddleware.js'
 import adminMiddleware from '../middleware/adminMiddleware.js'
 const punchRouter = express.Router()
-punchRouter.get("/", authmiddleware, adminMiddleware, getAllPunchRecords);
+punchRouter.get("/all", authmiddleware, adminMiddleware, getAllPunchRecords);
 
 punchRouter.post("/in", authmiddleware, punchIn);
 
@@ -12,6 +12,5 @@ punchRouter.post("/out", authmiddleware, punchOut);
 punchRouter.put("/edit/:attendanceId", authmiddleware,adminMiddleware, editPunchRecord
 );
 
-// ALWAYS PLACE DYNAMIC ROUTES LAST
-punchRouter.post("/:userId", authmiddleware, getPunchRecord);
+punchRouter.get("/", authmiddleware, getPunchRecord);
 export default punchRouter
