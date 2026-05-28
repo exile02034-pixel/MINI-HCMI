@@ -21,12 +21,7 @@ export const loginUser = async (req, res) => {
   try {
     const result = await authService.loginUser(req.body);
 
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 1000,
-    });
+    res.cookie("token", result.token, authService.loginCookieConfig());
 
     res.status(200).json({
       message: "Login successful",

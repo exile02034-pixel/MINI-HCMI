@@ -7,6 +7,7 @@ const defaultSchedule = {
   start: "09:00",
   end: "18:00",
 };
+const isProduction = process.env.NODE_ENV === "production";
 
 const serializeUser = (user) => ({
   uid: user.id,
@@ -101,8 +102,16 @@ export const authService = {
   logoutConfig() {
     return {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/",
+    };
+  },
+
+  loginCookieConfig() {
+    return {
+      ...this.logoutConfig(),
+      maxAge: 60 * 60 * 1000,
     };
   },
 };
